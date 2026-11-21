@@ -102,12 +102,17 @@ class Tunable:
             value = min(self.maximum, value)
         self.setter(value)
 
-    def format(self) -> str:
+    def format(self, unit: str | None = None) -> str:
         """Format the current value for display.
+
+        Args:
+            unit: Unit override for display, e.g. a localized unit.
+                Defaults to the tunable's own unit.
 
         Returns:
             The value with ``precision`` decimal places
             and the unit suffix, if any.
         """
+        unit = self.unit if unit is None else unit
         value = f"{self.getter():.{self.precision}f}"
-        return f"{value} {self.unit}" if self.unit else value
+        return f"{value} {unit}" if unit else value

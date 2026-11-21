@@ -15,6 +15,7 @@ except ImportError as exc:
 
 from .graphics_renderer import Color, GraphicsRenderer
 from .simulator import Simulator
+from .texts import Language
 from .tunables import Tunable
 
 BASE_DIR = pathlib.Path(__file__).resolve().parent
@@ -57,6 +58,7 @@ class SimulationRenderer:
 
     _simulator: Simulator
     _graphics_renderer: GraphicsRenderer
+    _language: Language
     _reference_m: float
     _scale: float
     _arrow_scale: float
@@ -72,6 +74,7 @@ class SimulationRenderer:
         scale: float = 0.1,
         arrow_scale: float = 1.0,
         font_size: int = 20,
+        language: Language | None = None,
     ) -> None:
         """Initialize the simulation renderer.
 
@@ -83,6 +86,8 @@ class SimulationRenderer:
                 Defaults to ``1.0``.
             font_size: Size of the font on screen. Must be a positive integer.
                 Defaults to ``20``.
+            language: UI language holder. A new ``Language`` in English
+                is created if ``None``. Defaults to ``None``.
 
         Raises:
             ValueError: If ``scale`` or ``arrow_scale`` is not positive or
@@ -97,6 +102,7 @@ class SimulationRenderer:
 
         self._simulator = simulator
         self._graphics_renderer = graphics_renderer
+        self._language = language if language is not None else Language()
         self._reference_m = simulator.m
         self.scale = scale
         self.arrow_scale = arrow_scale
@@ -280,10 +286,11 @@ class SimulationRenderer:
             selected_tunable: Index of the tunable to highlight,
                 or ``None`` for no highlight.
         """
+        texts = self._language.texts
         state_lines = [
-            f"X: {self._simulator.x:.3f} m",
-            f"V: {self._simulator.v:.3f} m/s",
-            f"F: {self._simulator.f:.3f} N",
+            f"{texts.position}: {self._simulator.x:.3f} {texts.unit_position}",
+            f"{texts.velocity}: {self._simulator.v:.3f} {texts.unit_velocity}",
+            f"{texts.force}: {self._simulator.f:.3f} {texts.unit_force}",
         ]
         state_colors: tuple[Color, ...] = (DYNAMIC_TEXT_COLOR,) * len(state_lines)
         if tunables:
@@ -292,8 +299,10 @@ class SimulationRenderer:
             for index, tunable in enumerate(tunables):
                 selected = index == selected_tunable
                 prefix = "> " if selected else "  "
+                name = texts.parameter_names.get(tunable.name, tunable.name)
+                unit = texts.parameter_units.get(tunable.unit, tunable.unit)
                 state_lines.append(
-                    f"{prefix}{index + 1} {tunable.name}: {tunable.format()}"
+                    f"{prefix}{index + 1} {name}: {tunable.format(unit)}"
                 )
                 state_colors += (
                     (SELECTED_TEXT_COLOR,) if selected else (STATIC_TEXT_COLOR,),
@@ -307,14 +316,17 @@ class SimulationRenderer:
         )
         self._graphics_renderer.draw_text(
             (
-                f"M: {self._simulator.m:.1f} kg",
-                f"Damping: {self._simulator.damping:.1f} N·s/m",
-                f"External F: {self._simulator.external_f:.1f} N",
-                f"Freq: {self._simulator.freq:.1f} Hz",
-                f"Target: {self._simulator.target_x:.1f} m",
-                f"X0: {self._simulator.x0:.1f} m",
-                f"V0: {self._simulator.v0:.1f} m/s",
-                f"F0: {self._simulator.f0:.1f} N",
+                f"{texts.mass}: {self._simulator.m:.1f} {texts.unit_mass}",
+                f"{texts.damping}: {self._simulator.damping:.1f} {texts.unit_damping}",
+                f"{texts.external_force}: {self._simulator.external_f:.1f} "
+                f"{texts.unit_force}",
+                f"{texts.frequency}: {self._simulator.freq:.1f} {texts.unit_frequency}",
+                f"{texts.target}: {self._simulator.target_x:.1f} {texts.unit_position}",
+                f"{texts.initial_position}: {self._simulator.x0:.1f} "
+                f"{texts.unit_position}",
+                f"{texts.initial_velocity}: {self._simulator.v0:.1f} "
+                f"{texts.unit_velocity}",
+                f"{texts.initial_force}: {self._simulator.f0:.1f} {texts.unit_force}",
             ),
             self._font,
             "down-left",
@@ -322,15 +334,16 @@ class SimulationRenderer:
             FONT_OFFSET_PX,
         )
         help_lines = [
-            "Scale: Ctrl +/-",
-            "Speed: Shift +/-",
-            "Speed=1: Shift+R",
-            "Restart: R",
-            "Pause: Space",
-            "Exit: Q / Ctrl+W",
+            texts.help_scale,
+            texts.help_speed,
+            texts.help_speed_reset,
+            texts.help_restart,
+            texts.help_pause,
+            texts.help_exit,
+            texts.help_language,
         ]
         if tunables:
-            help_lines[3:3] = ["Param: 1..9", "Tune: Up/Down (Shift = x10)"]
+            help_lines[3:3] = [texts.help_param, texts.help_tune]
         self._graphics_renderer.draw_text(
             tuple(help_lines),
             self._font,

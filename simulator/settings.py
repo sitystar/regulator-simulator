@@ -3,6 +3,8 @@
 import json
 from dataclasses import asdict, dataclass
 
+from .texts import LANGUAGES
+
 SETTINGS_FILE: str = ".settings.json"
 
 
@@ -16,12 +18,15 @@ class Settings:
         scale: Scale for ``SimulationRenderer``. Defaults to ``0.1``.
         speed: Speed for ``PlayerController`` and ``VideoExporter``.
             Defaults to ``1.0``.
+        language: UI language code for ``Language``, a key of
+            ``simulator.texts.LANGUAGES``. Defaults to ``"en"``.
     """
 
     window_size: tuple[int, int] = (640, 480)
     window_position: tuple[int, int] = (0, 0)
     scale: float = 0.1
     speed: float = 1.0
+    language: str = "en"
 
     def save(self, path: str = SETTINGS_FILE) -> None:
         """Save current settings to a JSON file.
@@ -88,4 +93,10 @@ class Settings:
             if not isinstance(value, (int, float)) or isinstance(value, bool):
                 raise TypeError(f"{key} must be a number, got {value!r}.")
             return float(value)
+        if key == "language":
+            if not isinstance(value, str) or value not in LANGUAGES:
+                raise TypeError(
+                    f"language must be one of {sorted(LANGUAGES)}, got {value!r}."
+                )
+            return value
         return value

@@ -14,6 +14,7 @@ except ImportError as exc:
 from .graphics_renderer import GraphicsRenderer
 from .simulation_renderer import SimulationRenderer
 from .simulator import Simulator
+from .texts import Language
 
 
 class VideoExporter:
@@ -22,12 +23,14 @@ class VideoExporter:
     _graphics_renderer: GraphicsRenderer
     _simulation_renderer: SimulationRenderer
     _simulator: Simulator
+    _language: Language
 
     def __init__(
         self,
         graphics_renderer: GraphicsRenderer,
         simulation_renderer: SimulationRenderer,
         simulator: Simulator,
+        language: Language | None = None,
     ) -> None:
         """Initialize the video exporter.
 
@@ -38,10 +41,13 @@ class VideoExporter:
                 for managing the simulation rendering.
             simulator: The ``Simulator`` instance
                 for managing the simulation.
+            language: UI language holder. A new ``Language`` in English
+                is created if ``None``. Defaults to ``None``.
         """
         self._graphics_renderer = graphics_renderer
         self._simulation_renderer = simulation_renderer
         self._simulator = simulator
+        self._language = language if language is not None else Language()
 
     def export(
         self,
@@ -121,7 +127,9 @@ class VideoExporter:
             while sim_time < seconds and completed:
                 sim_time += dt
                 self._simulator.simulate_dt(dt)
-                self._simulation_renderer.render((f"Speed: {speed:.2f}",))
+                self._simulation_renderer.render(
+                    (f"{self._language.texts.speed}: {speed:.2f}",)
+                )
                 self._graphics_renderer.present(capture_texture, capture_surface)
                 try:
                     ffmpeg_proc.stdin.write(capture_surface.get_view().raw)

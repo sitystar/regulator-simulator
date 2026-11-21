@@ -14,6 +14,7 @@ import sys
 
 from simulator import (
     GraphicsRenderer,
+    Language,
     PlayerController,
     Settings,
     SimulationRenderer,
@@ -101,7 +102,9 @@ class PIDRegulator:
 
 def build_app(
     settings: Settings,
-) -> tuple[WindowManager, GraphicsRenderer, SimulationRenderer, Simulator]:
+) -> tuple[
+    WindowManager, GraphicsRenderer, SimulationRenderer, Simulator, Language
+]:
     """Create the window, renderers and simulation from the settings.
 
     This is the "recipe" of the example: the simulator runs the physics,
@@ -110,8 +113,8 @@ def build_app(
     to draw).
 
     Returns:
-        The window manager, graphics renderer, simulation renderer
-        and simulator, in that order.
+        The window manager, graphics renderer, simulation renderer,
+        simulator and language holder, in that order.
     """
     regulator = PIDRegulator(
         p_coef=P_COEF, i_coef=I_COEF, d_coef=D_COEF, integral_limit=INTEGRAL_LIMIT
@@ -132,10 +135,11 @@ def build_app(
         position=settings.window_position,
     )
     graphics_renderer = GraphicsRenderer(window_manager)
+    language = Language(settings.language)
     simulation_renderer = SimulationRenderer(
-        simulator, graphics_renderer, scale=settings.scale
+        simulator, graphics_renderer, scale=settings.scale, language=language
     )
-    return window_manager, graphics_renderer, simulation_renderer, simulator
+    return window_manager, graphics_renderer, simulation_renderer, simulator, language
 
 
 def build_tunables(
@@ -200,8 +204,8 @@ def build_tunables(
 
 def run_interactive(settings: Settings) -> None:
     """Open the interactive window and save the settings when it closes."""
-    window_manager, graphics_renderer, simulation_renderer, simulator = build_app(
-        settings
+    window_manager, graphics_renderer, simulation_renderer, simulator, language = (
+        build_app(settings)
     )
     player_controller = PlayerController(
         window_manager,
@@ -210,6 +214,7 @@ def run_interactive(settings: Settings) -> None:
         simulator,
         speed=settings.speed,
         tunables=build_tunables(simulator.regulator, simulator),
+        language=language,
     )
     player_controller.run()
 
@@ -217,6 +222,7 @@ def run_interactive(settings: Settings) -> None:
     settings.window_position = window_manager.position
     settings.scale = simulation_renderer.scale
     settings.speed = player_controller.speed
+    settings.language = language.code
     settings.save()
 
 
@@ -228,10 +234,12 @@ def run_export(
     The video is rendered at the saved window size and zoom. Settings are
     not changed by the export.
     """
-    _window_manager, graphics_renderer, simulation_renderer, simulator = build_app(
-        settings
+    _window_manager, graphics_renderer, simulation_renderer, simulator, language = (
+        build_app(settings)
     )
-    video_exporter = VideoExporter(graphics_renderer, simulation_renderer, simulator)
+    video_exporter = VideoExporter(
+        graphics_renderer, simulation_renderer, simulator, language=language
+    )
     video_exporter.export(seconds, speed, filename, fps)
 
 

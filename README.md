@@ -23,6 +23,8 @@ This project accompanies the article explaining how PID works in simple terms. I
 * **Interactive Controls:** Change simulation speed, zoom, and pause in real-time.
 * **Live Tuning:** Adjust PID coefficients and physics parameters
   with the keyboard while the simulation runs.
+* **Localization:** English and Russian interface,
+  switchable at runtime with the ``L`` key.
 * **Complete Example:** `main.py` ships a ready-to-run PID regulator with both interactive playback and video export.
 * **Video Recording:** Built-in capability to render simulation footage to MP4 (requires ffmpeg).
 
@@ -67,8 +69,9 @@ Render a video instead of opening a window:
 python main.py --export --seconds 10 --speed 1.0 --fps 60 --name my_video.mp4
 ```
 
-Window size, position, zoom and speed are saved to `.settings.json` when
-you quit the interactive session and restored on the next launch.
+Window size, position, zoom, speed and interface language are saved to
+`.settings.json` when you quit the interactive session and restored on
+the next launch.
 
 ### 🎮 Controls
 
@@ -81,6 +84,7 @@ you quit the interactive session and restored on the next launch.
 | Shift + R   | Reset speed to 1.0x                           |
 | 1–9         | Select parameter to tune (P, I, D, physics)   |
 | Up / Down   | Tune selected parameter (Shift = x10 step)    |
+| L           | Switch interface language (EN/RU)             |
 | Q or Ctrl+W | Quit                                          |
 
 ### 📂 Project Structure
@@ -117,6 +121,8 @@ you quit the interactive session and restored on the next launch.
 * **Интерактивное управление:** Изменяйте скорость времени, масштаб и ставьте паузу прямо во время симуляции.
 * **Живая настройка:** Меняйте коэффициенты PID и параметры физики
   с клавиатуры прямо во время симуляции.
+* **Локализация:** Английский и русский интерфейс,
+  переключение на лету клавишей ``L``.
 * **Готовый пример:** В `main.py` — полностью готовый PID-регулятор с интерактивным запуском и записью видео.
 * **Запись видео:** Возможность рендеринга симуляции в MP4 (требуется ffmpeg).
 
@@ -161,8 +167,9 @@ python main.py
 python main.py --export --seconds 10 --speed 1.0 --fps 60 --name my_video.mp4
 ```
 
-Размер окна, его позиция, масштаб и скорость сохраняются в `.settings.json`
-при выходе из интерактивного режима и восстанавливаются при следующем запуске.
+Размер окна, его позиция, масштаб, скорость и язык интерфейса сохраняются
+в `.settings.json` при выходе из интерактивного режима и восстанавливаются
+при следующем запуске.
 
 ### 🎮 Управление
 
@@ -175,6 +182,7 @@ python main.py --export --seconds 10 --speed 1.0 --fps 60 --name my_video.mp4
 | Shift + R      | Сбросить скорость времени на 1.0x            |
 | 1–9            | Выбрать параметр (P, I, D, физика)           |
 | ↑ / ↓          | Изменить выбранный параметр (Shift = шаг x10)|
+| L              | Язык интерфейса (RU/EN)                      |
 | Q или Ctrl+W   | Выход                                        |
 
 ### 📂 Структура проекта

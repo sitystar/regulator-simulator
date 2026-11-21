@@ -13,6 +13,7 @@ from collections.abc import Sequence
 from .graphics_renderer import GraphicsRenderer
 from .simulation_renderer import SimulationRenderer
 from .simulator import Simulator
+from .texts import Language
 from .tunables import Tunable
 from .window_manager import WindowManager
 
@@ -53,6 +54,7 @@ class PlayerController:
     _simulator: Simulator
     _tunables: tuple[Tunable, ...]
     _selected_tunable: int
+    _language: Language
     _speed: float
     _running: bool
 
@@ -65,6 +67,7 @@ class PlayerController:
         speed: float = 1.0,
         paused: bool = False,
         tunables: Sequence[Tunable] = (),
+        language: Language | None = None,
     ) -> None:
         """Initialize the player controller.
 
@@ -84,6 +87,9 @@ class PlayerController:
             tunables: Parameters adjustable at runtime from the keyboard.
                 Keys ``1``-``9`` select one of them and ``Up``/``Down``
                 change its value. Defaults to ``()``.
+            language: UI language holder; the ``L`` key switches
+                the language at runtime. A new ``Language`` in English
+                is created if ``None``. Defaults to ``None``.
 
         Raises:
             ValueError: If ``speed`` is not positive.
@@ -94,6 +100,7 @@ class PlayerController:
         self._simulator = simulator
         self._tunables = tuple(tunables)
         self._selected_tunable = 0
+        self._language = language if language is not None else Language()
         self.speed = speed
 
         pygame.init()
@@ -142,6 +149,8 @@ class PlayerController:
                     event.scancode == pygame.KSCAN_W and mode & pygame.KMOD_CTRL
                 ):
                     self.stop()
+                elif event.scancode == pygame.KSCAN_L:
+                    self._language.toggle()
                 elif event.scancode in TUNABLE_SELECT_KEYS and self._tunables:
                     index = TUNABLE_SELECT_KEYS[event.scancode]
                     if index < len(self._tunables):
@@ -202,11 +211,12 @@ class PlayerController:
                 if not self.paused:
                     self._simulator.simulate_dt(dt * self.speed)
 
+                texts = self._language.texts
                 self._simulation_renderer.render(
                     (
-                        "PAUSED" if self.paused else "RUNNING",
-                        f"Speed: {self.speed:.2f}",
-                        f"Scale: {self._simulation_renderer.scale:.2f}",
+                        texts.paused if self.paused else texts.running,
+                        f"{texts.speed}: {self.speed:.2f}",
+                        f"{texts.scale}: {self._simulation_renderer.scale:.2f}",
                     ),
                     tunables=self._tunables,
                     selected_tunable=(
