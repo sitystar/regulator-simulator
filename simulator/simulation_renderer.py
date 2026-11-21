@@ -57,6 +57,7 @@ class SimulationRenderer:
 
     _simulator: Simulator
     _graphics_renderer: GraphicsRenderer
+    _reference_m: float
     _scale: float
     _arrow_scale: float
     _font_size: int
@@ -96,6 +97,7 @@ class SimulationRenderer:
 
         self._simulator = simulator
         self._graphics_renderer = graphics_renderer
+        self._reference_m = simulator.m
         self.scale = scale
         self.arrow_scale = arrow_scale
         self._font_size = font_size
@@ -160,8 +162,14 @@ class SimulationRenderer:
 
     @property
     def angle(self) -> float:
-        """Current angle of the inclined surface in radians."""
-        value = self._simulator.external_f / (self._simulator.m * GRAVITY_ACCELERATION)
+        """Current angle of the inclined surface in radians.
+
+        The incline visualizes the external force as the slope that would
+        produce it on the reference mass (the simulator's mass at
+        construction time). This way tuning the mass at runtime changes
+        only the dynamics, not the visual incline.
+        """
+        value = self._simulator.external_f / (self._reference_m * GRAVITY_ACCELERATION)
         return math.asin(max(-MAX_ANGLE_SIN, min(value, MAX_ANGLE_SIN)))
 
     def _draw_background(self) -> None:
