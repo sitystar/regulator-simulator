@@ -5,6 +5,7 @@ from .player_controller import PlayerController
 from .settings import Settings
 from .simulation_renderer import SimulationRenderer
 from .simulator import Simulator
+from .tunables import Tunable
 from .video_exporter import VideoExporter
 from .window_manager import WindowManager
 
@@ -14,6 +15,7 @@ __all__ = [
     "Settings",
     "SimulationRenderer",
     "Simulator",
+    "Tunable",
     "VideoExporter",
     "WindowManager",
 ]

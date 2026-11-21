@@ -2,6 +2,7 @@
 
 import math
 import pathlib
+from collections.abc import Sequence
 
 try:
     import pygame
@@ -14,6 +15,7 @@ except ImportError as exc:
 
 from .graphics_renderer import Color, GraphicsRenderer
 from .simulator import Simulator
+from .tunables import Tunable
 
 BASE_DIR = pathlib.Path(__file__).resolve().parent
 IMAGES_DIR = BASE_DIR / "images"
@@ -34,6 +36,7 @@ SURFACE_COLOR: Color = (45, 50, 58)
 MARKER_COLOR: Color = (0, 255, 200)
 STATIC_TEXT_COLOR: Color = (160, 170, 185)
 DYNAMIC_TEXT_COLOR: Color = (255, 215, 0)
+SELECTED_TEXT_COLOR: Color = (0, 255, 200)
 
 GRAVITY_ACCELERATION: float = 9.8
 ROBOT_SIZE_M: float = 0.25
@@ -253,22 +256,45 @@ class SimulationRenderer:
                 flip_x=flip_x,
             )
 
-    def _draw_system_state(self, view_status_text: tuple[str, ...]) -> None:
+    def _draw_system_state(
+        self,
+        view_status_text: tuple[str, ...],
+        tunables: Sequence[Tunable] = (),
+        selected_tunable: int | None = None,
+    ) -> None:
         """Draw system state information.
 
         Args:
             view_status_text: Lines of the view status text to draw
                 in the bottom-right corner.
+            tunables: Runtime-adjustable parameters to draw
+                below the dynamic state block.
+            selected_tunable: Index of the tunable to highlight,
+                or ``None`` for no highlight.
         """
+        state_lines = [
+            f"X: {self._simulator.x:.3f} m",
+            f"V: {self._simulator.v:.3f} m/s",
+            f"F: {self._simulator.f:.3f} N",
+        ]
+        state_colors: tuple[Color, ...] = (DYNAMIC_TEXT_COLOR,) * len(state_lines)
+        if tunables:
+            state_lines.append("")
+            state_colors += (STATIC_TEXT_COLOR,)
+            for index, tunable in enumerate(tunables):
+                selected = index == selected_tunable
+                prefix = "> " if selected else "  "
+                state_lines.append(
+                    f"{prefix}{index + 1} {tunable.name}: {tunable.format()}"
+                )
+                state_colors += (
+                    (SELECTED_TEXT_COLOR,) if selected else (STATIC_TEXT_COLOR,),
+                )
         self._graphics_renderer.draw_text(
-            (
-                f"X: {self._simulator.x:.3f} m",
-                f"V: {self._simulator.v:.3f} m/s",
-                f"F: {self._simulator.f:.3f} N",
-            ),
+            tuple(state_lines),
             self._font,
             "up-left",
-            DYNAMIC_TEXT_COLOR,
+            state_colors,
             FONT_OFFSET_PX,
         )
         self._graphics_renderer.draw_text(
@@ -287,15 +313,18 @@ class SimulationRenderer:
             STATIC_TEXT_COLOR,
             FONT_OFFSET_PX,
         )
+        help_lines = [
+            "Scale: Ctrl +/-",
+            "Speed: Shift +/-",
+            "Speed=1: Shift+R",
+            "Restart: R",
+            "Pause: Space",
+            "Exit: Q / Ctrl+W",
+        ]
+        if tunables:
+            help_lines[3:3] = ["Param: 1..9", "Tune: Up/Down (Shift = x10)"]
         self._graphics_renderer.draw_text(
-            (
-                "Scale: Ctrl +/-",
-                "Speed: Shift +/-",
-                "Speed=1: Shift+R",
-                "Restart: R",
-                "Pause: Space",
-                "Exit: Q / Ctrl+W",
-            ),
+            tuple(help_lines),
             self._font,
             "up-right",
             STATIC_TEXT_COLOR,
@@ -309,15 +338,24 @@ class SimulationRenderer:
             FONT_OFFSET_PX,
         )
 
-    def render(self, view_status_text: tuple[str, ...]) -> None:
+    def render(
+        self,
+        view_status_text: tuple[str, ...],
+        tunables: Sequence[Tunable] = (),
+        selected_tunable: int | None = None,
+    ) -> None:
         """Render the current simulation state.
 
         Args:
             view_status_text: Lines of the view status text to draw
                 in the bottom-right corner.
+            tunables: Runtime-adjustable parameters to draw
+                below the dynamic state block.
+            selected_tunable: Index of the tunable to highlight,
+                or ``None`` for no highlight.
         """
         self._draw_background()
         self._draw_surface()
         self._draw_target_marker()
         self._draw_robot_with_arrows()
-        self._draw_system_state(view_status_text)
+        self._draw_system_state(view_status_text, tunables, selected_tunable)

@@ -18,6 +18,7 @@ from simulator import (
     Settings,
     SimulationRenderer,
     Simulator,
+    Tunable,
     VideoExporter,
     WindowManager,
 )
@@ -42,7 +43,14 @@ class PIDRegulator:
     """PID regulator: converts the simulation state into a control force.
 
     ``__call__`` is the interface used by ``Simulator``: it receives the
-    state and returns the control force.
+    state and returns the control force. The coefficients are public
+    attributes so they can be tuned while the simulation is running.
+
+    Attributes:
+        p_coef: Proportional coefficient.
+        i_coef: Integral coefficient.
+        d_coef: Differential coefficient.
+        integral_limit: Maximum absolute value of the accumulated integral.
     """
 
     def __init__(
@@ -56,10 +64,10 @@ class PIDRegulator:
             d_coef: Differential coefficient.
             integral_limit: Maximum absolute value of the accumulated integral.
         """
-        self._p_coef = p_coef
-        self._i_coef = i_coef
-        self._d_coef = d_coef
-        self._integral_limit = integral_limit
+        self.p_coef = p_coef
+        self.i_coef = i_coef
+        self.d_coef = d_coef
+        self.integral_limit = integral_limit
         self._integral = 0.0
 
     def __call__(
@@ -80,10 +88,10 @@ class PIDRegulator:
         deviation = x - target_x
         self._integral += step_integral
         self._integral = max(
-            -self._integral_limit, min(self._integral, self._integral_limit)
+            -self.integral_limit, min(self._integral, self.integral_limit)
         )
         return -(
-            deviation * self._p_coef + self._integral * self._i_coef + v * self._d_coef
+            deviation * self.p_coef + self._integral * self.i_coef + v * self.d_coef
         )
 
     def reset(self) -> None:
@@ -130,6 +138,66 @@ def build_app(
     return window_manager, graphics_renderer, simulation_renderer, simulator
 
 
+def build_tunables(
+    regulator: PIDRegulator, simulator: Simulator
+) -> tuple[Tunable, ...]:
+    """Create the parameters adjustable at runtime from the keyboard.
+
+    Args:
+        regulator: The PID regulator whose coefficients are tunable.
+        simulator: The simulator whose physics is tunable.
+
+    Returns:
+        The tunables, in the order selected by keys ``1``-``9``.
+    """
+    return (
+        Tunable(
+            "P",
+            lambda: regulator.p_coef,
+            lambda value: setattr(regulator, "p_coef", value),
+            minimum=0.0,
+        ),
+        Tunable(
+            "I",
+            lambda: regulator.i_coef,
+            lambda value: setattr(regulator, "i_coef", value),
+            minimum=0.0,
+        ),
+        Tunable(
+            "D",
+            lambda: regulator.d_coef,
+            lambda value: setattr(regulator, "d_coef", value),
+            minimum=0.0,
+        ),
+        Tunable(
+            "Mass",
+            lambda: simulator.m,
+            lambda value: setattr(simulator, "m", value),
+            minimum=0.1,
+            unit="kg",
+        ),
+        Tunable(
+            "Damping",
+            lambda: simulator.damping,
+            lambda value: setattr(simulator, "damping", value),
+            minimum=0.0,
+            unit="N·s/m",
+        ),
+        Tunable(
+            "Ext force",
+            lambda: simulator.external_f,
+            lambda value: setattr(simulator, "external_f", value),
+            unit="N",
+        ),
+        Tunable(
+            "Target",
+            lambda: simulator.target_x,
+            lambda value: setattr(simulator, "target_x", value),
+            unit="m",
+        ),
+    )
+
+
 def run_interactive(settings: Settings) -> None:
     """Open the interactive window and save the settings when it closes."""
     window_manager, graphics_renderer, simulation_renderer, simulator = build_app(
@@ -141,6 +209,7 @@ def run_interactive(settings: Settings) -> None:
         simulation_renderer,
         simulator,
         speed=settings.speed,
+        tunables=build_tunables(simulator.regulator, simulator),
     )
     player_controller.run()
 

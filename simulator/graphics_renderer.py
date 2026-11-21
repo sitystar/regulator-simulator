@@ -386,7 +386,7 @@ class GraphicsRenderer:
         lines: tuple[str, ...],
         font: pygame.font.Font,
         position: str,
-        color: Color,
+        color: Color | tuple[Color, ...],
         offset: float,
     ) -> None:
         """Draw the text.
@@ -396,22 +396,34 @@ class GraphicsRenderer:
             font: The font to use.
             position: The position of the text.
                 Must be ``up-left``/``down-left``/``up-right``/``down-right``.
-            color: A tuple representing the RGB/RGBA color values.
+            color: A single color for all lines, or one color per line.
             offset: The distance from the corresponding render target edges
                 in logical pixels.
 
         Raises:
             ValueError: If ``position`` is not
-                ``up-left``/``down-left``/``up-right``/``down-right``.
+                ``up-left``/``down-left``/``up-right``/``down-right``, or
+                if a per-line color sequence does not match
+                the number of lines.
         """
         if position not in ("up-left", "down-left", "up-right", "down-right"):
             raise ValueError("Position must be up-left/down-left/up-right/down-right.")
 
+        if color and isinstance(color[0], tuple):
+            if len(color) != len(lines):
+                raise ValueError("Per-line colors must match the number of lines.")
+            colors = color
+        else:
+            colors = (color,) * len(lines)
+
         if "down" in position:
             lines = lines[::-1]
+            colors = colors[::-1]
         line_height = font.get_linesize()
         for i, s in enumerate(lines):
-            tex = self._get_text_texture(s, font, color)
+            if not s:
+                continue
+            tex = self._get_text_texture(s, font, colors[i])
             if "left" in position:
                 x = offset * self._ssaa
             else:

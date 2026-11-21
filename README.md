@@ -21,6 +21,8 @@ This project accompanies the article explaining how PID works in simple terms. I
 * **Real-time Visualization:** See the robot, target position, and force vectors instantly.
 * **Physics Engine:** Simulates mass, damping (friction), and external forces (gravity/slope).
 * **Interactive Controls:** Change simulation speed, zoom, and pause in real-time.
+* **Live Tuning:** Adjust PID coefficients and physics parameters
+  with the keyboard while the simulation runs.
 * **Complete Example:** `main.py` ships a ready-to-run PID regulator with both interactive playback and video export.
 * **Video Recording:** Built-in capability to render simulation footage to MP4 (requires ffmpeg).
 
@@ -70,14 +72,16 @@ you quit the interactive session and restored on the next launch.
 
 ### 🎮 Controls
 
-| Key         | Action                               |
-| ----------- | ------------------------------------ |
-| Space       | Pause / Resume simulation            |
-| R           | Restart simulation (reset state)     |
-| Ctrl + +/-  | Zoom In / Out                        |
-| Shift + +/- | Increase / Decrease simulation speed |
-| Shift + R   | Reset speed to 1.0x                  |
-| Q or Ctrl+W | Quit                                 |
+| Key         | Action                                        |
+| ----------- | --------------------------------------------- |
+| Space       | Pause / Resume simulation                     |
+| R           | Restart simulation (reset state)              |
+| Ctrl + +/-  | Zoom In / Out                                 |
+| Shift + +/- | Increase / Decrease simulation speed          |
+| Shift + R   | Reset speed to 1.0x                           |
+| 1–9         | Select parameter to tune (P, I, D, physics)   |
+| Up / Down   | Tune selected parameter (Shift = x10 step)    |
+| Q or Ctrl+W | Quit                                          |
 
 ### 📂 Project Structure
 
@@ -111,6 +115,8 @@ you quit the interactive session and restored on the next launch.
 * **Наглядная визуализация:** Отображение робота, цели, векторов силы и текущих параметров.
 * **Физическая модель:** Учитывает массу, затухание (вязкое трение), внешние силы (наклон поверхности).
 * **Интерактивное управление:** Изменяйте скорость времени, масштаб и ставьте паузу прямо во время симуляции.
+* **Живая настройка:** Меняйте коэффициенты PID и параметры физики
+  с клавиатуры прямо во время симуляции.
 * **Готовый пример:** В `main.py` — полностью готовый PID-регулятор с интерактивным запуском и записью видео.
 * **Запись видео:** Возможность рендеринга симуляции в MP4 (требуется ffmpeg).
 
@@ -160,14 +166,16 @@ python main.py --export --seconds 10 --speed 1.0 --fps 60 --name my_video.mp4
 
 ### 🎮 Управление
 
-| Клавиша        | Действие                           |
-| -------------- | ---------------------------------- |
-| Space (Пробел) | Пауза / Продолжить                 |
-| R              | Рестарт (сброс состояния в начало) |
-| Ctrl + +/-     | Приблизить / Отдалить (Масштаб)    |
-| Shift + +/-    | Ускорить / Замедлить время         |
-| Shift + R      | Сбросить скорость времени на 1.0x  |
-| Q или Ctrl+W   | Выход                              |
+| Клавиша        | Действие                                     |
+| -------------- | -------------------------------------------- |
+| Space (Пробел) | Пауза / Продолжить                           |
+| R              | Рестарт (сброс состояния в начало)           |
+| Ctrl + +/-     | Приблизить / Отдалить (Масштаб)              |
+| Shift + +/-    | Ускорить / Замедлить время                   |
+| Shift + R      | Сбросить скорость времени на 1.0x            |
+| 1–9            | Выбрать параметр (P, I, D, физика)           |
+| ↑ / ↓          | Изменить выбранный параметр (Shift = шаг x10)|
+| Q или Ctrl+W   | Выход                                        |
 
 ### 📂 Структура проекта
 

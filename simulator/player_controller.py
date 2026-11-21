@@ -8,14 +8,33 @@ except ImportError as exc:
         "Install it with: pip install pygame-ce."
     ) from exc
 
+from collections.abc import Sequence
+
 from .graphics_renderer import GraphicsRenderer
 from .simulation_renderer import SimulationRenderer
 from .simulator import Simulator
+from .tunables import Tunable
 from .window_manager import WindowManager
 
 SCALE_ADJUSTMENT_SPEED: float = 2.0
 SPEED_ADJUSTMENT_SPEED: float = 2.0
 MAX_FRAME_DT: float = 0.1
+KEY_REPEAT_DELAY_MS: int = 400
+KEY_REPEAT_INTERVAL_MS: int = 80
+
+#: Maps the scancodes of the digit keys (main row and keypad) to their
+#: zero-based index, used to select a tunable.
+TUNABLE_SELECT_KEYS: dict[int, int] = {
+    scan: index
+    for keys in (
+        tuple(getattr(pygame, f"KSCAN_{digit}") for digit in range(1, 10)),
+        tuple(getattr(pygame, f"KSCAN_KP{digit}") for digit in range(1, 10)),
+    )
+    for index, scan in enumerate(keys)
+}
+
+#: Scancodes that respond to auto-repeated key presses.
+REPEATABLE_SCANCODES: tuple[int, ...] = (pygame.KSCAN_UP, pygame.KSCAN_DOWN)
 
 
 class PlayerController:
@@ -32,6 +51,8 @@ class PlayerController:
     _graphics_renderer: GraphicsRenderer
     _simulation_renderer: SimulationRenderer
     _simulator: Simulator
+    _tunables: tuple[Tunable, ...]
+    _selected_tunable: int
     _speed: float
     _running: bool
 
@@ -43,6 +64,7 @@ class PlayerController:
         simulator: Simulator,
         speed: float = 1.0,
         paused: bool = False,
+        tunables: Sequence[Tunable] = (),
     ) -> None:
         """Initialize the player controller.
 
@@ -59,6 +81,9 @@ class PlayerController:
                 Must be positive. Defaults to ``1.0``.
             paused: Whether the simulation should start paused.
                 Defaults to ``False``.
+            tunables: Parameters adjustable at runtime from the keyboard.
+                Keys ``1``-``9`` select one of them and ``Up``/``Down``
+                change its value. Defaults to ``()``.
 
         Raises:
             ValueError: If ``speed`` is not positive.
@@ -67,6 +92,8 @@ class PlayerController:
         self._graphics_renderer = graphics_renderer
         self._simulation_renderer = simulation_renderer
         self._simulator = simulator
+        self._tunables = tuple(tunables)
+        self._selected_tunable = 0
         self.speed = speed
 
         pygame.init()
@@ -103,6 +130,10 @@ class PlayerController:
                 self._graphics_renderer.update_size()
             elif event.type == pygame.KEYDOWN:
                 mode = pygame.key.get_mods()
+                if getattr(event, "repeat", 0) and (
+                    event.scancode not in REPEATABLE_SCANCODES
+                ):
+                    continue
                 if event.scancode == pygame.KSCAN_R and not (mode & pygame.KMOD_SHIFT):
                     self._simulator.reset()
                 elif event.scancode == pygame.KSCAN_SPACE:
@@ -111,6 +142,18 @@ class PlayerController:
                     event.scancode == pygame.KSCAN_W and mode & pygame.KMOD_CTRL
                 ):
                     self.stop()
+                elif event.scancode in TUNABLE_SELECT_KEYS and self._tunables:
+                    index = TUNABLE_SELECT_KEYS[event.scancode]
+                    if index < len(self._tunables):
+                        self._selected_tunable = index
+                elif event.scancode == pygame.KSCAN_UP and self._tunables:
+                    self._tunables[self._selected_tunable].adjust(
+                        1, big=bool(mode & pygame.KMOD_SHIFT)
+                    )
+                elif event.scancode == pygame.KSCAN_DOWN and self._tunables:
+                    self._tunables[self._selected_tunable].adjust(
+                        -1, big=bool(mode & pygame.KMOD_SHIFT)
+                    )
 
     def _process_adjustment_keys(self, dt: float) -> None:
         """Handle continuous input for scale and speed adjustments.
@@ -148,6 +191,7 @@ class PlayerController:
         first_frame = True
         self._running = True
         self._window_manager.show()
+        pygame.key.set_repeat(KEY_REPEAT_DELAY_MS, KEY_REPEAT_INTERVAL_MS)
         clock = pygame.time.Clock()
         try:
             while self._running:
@@ -163,7 +207,11 @@ class PlayerController:
                         "PAUSED" if self.paused else "RUNNING",
                         f"Speed: {self.speed:.2f}",
                         f"Scale: {self._simulation_renderer.scale:.2f}",
-                    )
+                    ),
+                    tunables=self._tunables,
+                    selected_tunable=(
+                        self._selected_tunable if self._tunables else None
+                    ),
                 )
                 self._graphics_renderer.present()
 
